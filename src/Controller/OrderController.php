@@ -8,6 +8,9 @@ use App\Form\OrderType;
 use App\Service\Cart;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Stripe\Checkout\Session;
+use Stripe\PaymentIntent;
+use Stripe\Stripe;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -40,7 +43,7 @@ class OrderController extends AbstractController
     }
 
     /**
-     * @Route("/commande/recapitulatif", name="order_recap", methods={"POST"})
+     * @Route("/commande/recapitulatif", name="order_recap")
      * @param Cart $cart
      * @param Request $request
      * @param EntityManagerInterface $em
@@ -48,6 +51,7 @@ class OrderController extends AbstractController
      */
     public function add(Cart $cart, Request $request, EntityManagerInterface $em): Response
     {
+
         $form = $this->createForm(OrderType::class, null, [
             'user' => $this->getUser()
         ]);
@@ -65,7 +69,9 @@ class OrderController extends AbstractController
             $deliveryContent .= '<br/>' . $delivery->getPostal() . ' ' . $delivery->getCity();
             $deliveryContent .= '<br/>' . $delivery->getCountry();
 
-            $order = new Order();
+            $order     = new Order();
+            $reference = $date->format('dmY') . '.' . uniqid();
+            $order->setReference($reference);
             $order->setUser($this->getUser());
             $order->setCreatedAt($date);
             $order->setCarrierName($carriers->getName());
@@ -73,7 +79,6 @@ class OrderController extends AbstractController
             $order->setDelivery($deliveryContent);
             $order->setIsPaid(0);
             $em->persist($order);
-
             foreach ($cart->getFull() as $product) {
                 $orderDetails = new OrderDetails();
                 $orderDetails->setMyOrder($order);
@@ -82,14 +87,18 @@ class OrderController extends AbstractController
                 $orderDetails->setPrice($product['product']->getPrice());
                 $orderDetails->setTotal($product['product']->getPrice() * $product['quantity']);
                 $em->persist($orderDetails);
+
             }
             $em->flush();
+
             return $this->render('order/add.html.twig', [
-                'cart'     => $cart->getFull(),
-                'carrier'  => $carriers,
-                'delivery' => $deliveryContent
+                'cart'      => $cart->getFull(),
+                'carrier'   => $carriers,
+                'delivery'  => $deliveryContent,
+                'reference' => $order->getReference()
             ]);
         }
-        return $this->redirectToRoute($cart);
+
+        return $this->redirectToRoute('cart');
     }
 }

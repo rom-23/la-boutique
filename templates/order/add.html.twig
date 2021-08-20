@@ -15,7 +15,7 @@
             <hr>
             <strong>Mon transporteur</strong><br/>
             <div class="form-check">
-            {{ carrier.name }} - {{ carrier.price|number_format(2,',','.') }}
+                {{ carrier.name }} - {{ carrier.price|number_format(2,',','.') }}
             </div>
         </div>
         <div class="col-md-6">
@@ -46,7 +46,38 @@
             <strong>Livraison : {{ carrier.price|number_format(2,',','.') }}</strong>
             <hr>
             <strong>Total : {{ (total/100 + carrier.price)|number_format(2,',','.') }}</strong>
-            <a href="" class="btn btn-success btn-block mt-3">Payer {{ (total/100 + carrier.price)|number_format(2,',','.') }} $</a>
+            <a id="checkout-button" class="btn btn-success btn-block mt-3">Payer {{ (total/100 + carrier.price)|number_format(2,',','.') }} $</a>
         </div>
     </div>
+
+{% endblock %}
+{% block javascript %}
+<script>
+    let stripe =
+    Stripe("pk_test_51JQ9T1EDco8ISEWwGMLZlujiUiXYdYbb6KdtRDgZgRgvIAwYc4pYXFuVbffLHgzFXfdk4MsY8KDkWH6GoIqfke4X00WENXBqfN");
+    document.getElementById("checkout-button").addEventListener('click', function (e) {
+    fetch("/commande/create-session/{{ reference }}", {
+        method: "POST"
+    })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (session) {
+            if (session.error == 'order') {
+window.location.replace('{{ path('order') }}');
+
+            } else {
+                return stripe.redirectToCheckout({sessionId: session.id});
+            }
+        })
+        .then(function (result) {
+            if (result.error) {
+                alert(result.error.message);
+            }
+        })
+        .catch(function (error) {
+            console.log(error);
+        })
+})
+</script>
 {% endblock %}
