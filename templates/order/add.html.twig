@@ -15,7 +15,7 @@
             <hr>
             <strong>Mon transporteur</strong><br/>
             <div class="form-check">
-                {{ carrier.name }} - {{ carrier.price|number_format(2,',','.') }}
+                {{ carrier.name }} - {{ (carrier.price/100)|number_format(2,',','.') }}
             </div>
         </div>
         <div class="col-md-6">
@@ -43,10 +43,10 @@
             </div>
             <hr>
             <strong>Sous-Total : {{ (total /100)|number_format(2,',','.') }} $</strong><br/>
-            <strong>Livraison : {{ carrier.price|number_format(2,',','.') }}</strong>
+            <strong>Livraison : {{ (carrier.price/100) |number_format(2,',','.') }}</strong>
             <hr>
-            <strong>Total : {{ (total/100 + carrier.price)|number_format(2,',','.') }}</strong>
-            <a id="checkout-button" class="btn btn-success btn-block mt-3">Payer {{ (total/100 + carrier.price)|number_format(2,',','.') }} $</a>
+            <strong>Total : {{ (total/100 + (carrier.price/100))|number_format(2,',','.') }} $</strong>
+            <a id="checkout-button" class="btn btn-success btn-block mt-3">Payer {{ (total/100 + (carrier.price/100))|number_format(2,',','.') }} $</a>
         </div>
     </div>
 

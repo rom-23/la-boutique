@@ -56,7 +56,7 @@ class StripeController extends AbstractController
                     'name'   => $order->getCarrierName(),
                     'images' => [$YOUR_DOMAIN],
                 ],
-                'unit_amount'  => $order->getCarrierPrice() * 100,
+                'unit_amount'  => $order->getCarrierPrice(),
             ],
             'quantity'   => 1
         ];
@@ -76,18 +76,43 @@ class StripeController extends AbstractController
     }
 
     /**
-     * @Route("/commande/merci/{stripeSessionId}", name="order_validate")
+     * @Route("/commande/merci/{stripeSessionId}", name="order_success")
      * @param EntityManagerInterface $entityManager
      * @param $stripeSessionId
      * @return Response
      */
-    public function merci(EntityManagerInterface $entityManager, $stripeSessionId): Response
+    public function stripeSuccess(EntityManagerInterface $entityManager,Cart $cart, $stripeSessionId): Response
+    {
+        $order = $entityManager->getRepository(Order::class)->findOneBy(['stripeSessionId' => $stripeSessionId]);
+        if (!$order || $order->getUser() != $this->getUser()) {
+            return $this->redirectToRoute('home');
+        }
+        if(!$order->getIsPaid()){
+            $cart->remove();
+            $order->setIsPaid(1);
+            $entityManager->flush();
+        }
+
+        return $this->render('order/order_success.html.twig',[
+            'order'=>$order
+        ]);
+    }
+
+    /**
+     * @Route("/commande/erreur/{stripeSessionId}", name="order_cancel")
+     * @param EntityManagerInterface $entityManager
+     * @param $stripeSessionId
+     * @return Response
+     */
+    public function stripeCancel(EntityManagerInterface $entityManager, $stripeSessionId): Response
     {
         $order = $entityManager->getRepository(Order::class)->findOneBy(['stripeSessionId' => $stripeSessionId]);
         if (!$order || $order->getUser() != $this->getUser()) {
             return $this->redirectToRoute('home');
         }
 
-        return $this->render('order/order_validate.html.twig');
+        return $this->render('order/order_cancel.html.twig',[
+            'order'=>$order
+        ]);
     }
 }

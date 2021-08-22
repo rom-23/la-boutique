@@ -32,10 +32,7 @@ class OrderController extends AbstractController
         $form = $this->createForm(OrderType::class, null, [
             'user' => $this->getUser()
         ]);
-        $form->handleRequest($request);
-        if ($form->isSubmitted() && $form->isValid()) {
-            dd($form->getData());
-        }
+
         return $this->render('order/index.html.twig', [
             'form' => $form->createView(),
             'cart' => $cart->getFull()
