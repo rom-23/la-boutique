@@ -15,8 +15,6 @@ use Symfony\Component\Routing\Annotation\Route;
 class ProductController extends AbstractController
 {
 
-    private $em;
-
     /**
      * @Route("/produits", name="products")
      * @param EntityManagerInterface $em
@@ -46,12 +44,14 @@ class ProductController extends AbstractController
      */
     public function show(EntityManagerInterface $em, $id): Response
     {
-        $product = $em->getRepository(Product::class)->find($id);
+        $products = $em->getRepository(Product::class)->findBy(['isBest' => 1]);
+        $product  = $em->getRepository(Product::class)->find($id);
         if (!$product) {
             $this->redirectToRoute('products');
         }
         return $this->render('product/show.html.twig', [
-            'product' => $product
+            'product'  => $product,
+            'products' => $products
         ]);
     }
 }

@@ -12,8 +12,18 @@
             <p>{{ product.subtitle }}</p>
             <span class="product-single-price">{{ (product.price /100)|number_format(2,',','.') }} $</span>
             <hr>
-            <p>{{ product.description }}</p>
+            <p>{{ product.description|raw }}</p>
             <a href="{{ path('add_to_cart', {'id':product.id}) }}" class="btn btn-info btn-sm">Ajouter au panier</a>
         </div>
+    </div>
+    <hr class="mb-5"/>
+    <h3 class="text-center">Nos meilleures ventes</h3>
+    <p class="text-center">Decouvrez les articles les plus vendus</p>
+    <div class="row">
+        {% for product in products %}
+            <div class="col-md-3">
+                {% include 'product/single.html.twig' %}
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}

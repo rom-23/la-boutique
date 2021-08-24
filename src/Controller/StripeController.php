@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Order;
 use App\Entity\Product;
 use App\Service\Cart;
+use App\Service\Mail;
 use Doctrine\ORM\EntityManagerInterface;
 use Stripe\Checkout\Session;
 use Stripe\Exception\ApiErrorException;
@@ -78,23 +79,27 @@ class StripeController extends AbstractController
     /**
      * @Route("/commande/merci/{stripeSessionId}", name="order_success")
      * @param EntityManagerInterface $entityManager
+     * @param Cart $cart
      * @param $stripeSessionId
      * @return Response
      */
-    public function stripeSuccess(EntityManagerInterface $entityManager,Cart $cart, $stripeSessionId): Response
+    public function stripeSuccess(EntityManagerInterface $entityManager, Cart $cart, $stripeSessionId): Response
     {
         $order = $entityManager->getRepository(Order::class)->findOneBy(['stripeSessionId' => $stripeSessionId]);
         if (!$order || $order->getUser() != $this->getUser()) {
             return $this->redirectToRoute('home');
         }
-        if(!$order->getIsPaid()){
+        if ($order->getState() == 0) {
             $cart->remove();
-            $order->setIsPaid(1);
+            $order->setState(1);
             $entityManager->flush();
+            $mail    = new Mail();
+            $content = 'Bonjour' . $order->getUser()->getFirstName() . '<br/>Merci pour votre commande<br/>';
+            $mail->send($order->getUser()->getEmail(), $order->getUser()->getFirstName(), 'Votre commande est bien validée.', $content);
         }
 
-        return $this->render('order/order_success.html.twig',[
-            'order'=>$order
+        return $this->render('order/order_success.html.twig', [
+            'order' => $order
         ]);
     }
 
@@ -111,8 +116,8 @@ class StripeController extends AbstractController
             return $this->redirectToRoute('home');
         }
 
-        return $this->render('order/order_cancel.html.twig',[
-            'order'=>$order
+        return $this->render('order/order_cancel.html.twig', [
+            'order' => $order
         ]);
     }
 }
